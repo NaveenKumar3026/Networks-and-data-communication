@@ -3,33 +3,38 @@ import socket
 HOST = "127.0.0.1"
 PORT = 8080
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-server.bind((HOST, PORT))
+server_socket.bind((HOST, PORT))
+server_socket.listen(5)
 
-server.listen(5)
-
-print("Server running on port", PORT)
+print(f"HTTP Server listening on http://{HOST}:{PORT}")
 
 while True:
-    client, address = server.accept()
+    client_socket, address = server_socket.accept()
 
-    print("Connected by", address)
+    request = client_socket.recv(1024).decode()
 
-    request = client.recv(1024)
+    print("\n========== HTTP REQUEST ==========")
+    print(request)
 
-    print(request.decode())
+    html = """
+    <html>
+        <body>
+            <h1>Welcome to HTTP Server</h1>
+            <h2>Networks and Data Communication</h2>
+        </body>
+    </html>
+    """
 
-    response = """HTTP/1.1 200 OK
+    response = (
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html\r\n"
+        f"Content-Length: {len(html)}\r\n"
+        "Connection: close\r\n\r\n"
+        + html
+    )
 
-<html>
-<head><title>Socket Programming</title></head>
-<body>
-<h1>Hello from Python HTTP Server!</h1>
-</body>
-</html>
-"""
-
-    client.send(response.encode())
-
-    client.close()
+    client_socket.sendall(response.encode())
+    client_socket.close()
